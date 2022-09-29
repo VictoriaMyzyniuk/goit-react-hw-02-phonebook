@@ -1,19 +1,9 @@
-import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { Component } from 'react';
 import { ContactList } from 'components/ContactList/ContactList';
-import * as yup from 'yup';
 import { nanoid } from 'nanoid';
 import { Filter } from 'components/Filter/Filter';
-
-const schema = yup.object().shape({
-  name: yup.string().required(),
-  number: yup.string().min(4).max(8).required(),
-});
-
-const initialValues = {
-  name: '',
-  number: '',
-};
+import { ContactForm } from 'components/ContactForm/ContactForm';
+import { Container } from 'components/App.styled';
 
 export class App extends Component {
   state = {
@@ -29,76 +19,61 @@ export class App extends Component {
       name,
       number,
     };
-
-    const checkName = this.state.contacts.some(item =>
-      item.name.toLowerCase().includes(contact.name.toLowerCase())
+    const dublicateContact = this.findDublicateContact(
+      contact,
+      this.state.contacts
     );
-    checkName
+    dublicateContact
       ? alert(`${contact.name} is already in contacts`)
       : this.setState(prevState => ({
           contacts: [...prevState.contacts, { ...values, id: nanoid() }],
         }));
   };
 
+  findDublicateContact = (contact, contactsList) => {
+    return contactsList.find(
+      item => item.name.toLowerCase() === contact.name.toLowerCase()
+    );
+  };
+
   onFilterChange = e => {
-    console.log(e.currentTarget.value);
     this.setState({
       filter: e.currentTarget.value,
     });
   };
 
-  getNeddedCard = () => {
+  getNeeddedCard = () => {
     const normalizedFilter = this.state.filter.toLowerCase();
     return this.state.contacts.filter(contact =>
       contact.name.toLowerCase().includes(normalizedFilter)
     );
   };
 
-  deleteCard = idx => {
+  deleteCard = contactId => {
     this.setState(prevState => ({
-      contacts: prevState.contacts.filter(contact => contact.id !== idx),
+      contacts: prevState.contacts.filter(contact => contact.id !== contactId),
     }));
   };
 
   render() {
-    const neddedCards = this.getNeddedCard();
+    const neddedCards = this.getNeeddedCard();
     return (
-      <>
+      <Container>
         <h1>Phonebook</h1>
-        <Formik
-          initialValues={initialValues}
-          validationSchema={schema}
-          onSubmit={this.handleSubmit}
-        >
-          <Form autoComplete="off">
-            <label htmlFor="name">
-              Name
-              <Field type="text" name="name" />
-              <ErrorMessage name="name" component="div" />
-            </label>
-            <br />
-            <label htmlFor="number">
-              Number
-              <Field type="tel" name="number" />
-              <ErrorMessage name="number" component="div" />
-            </label>
-            <button type="submit">Add contact</button>
-          </Form>
-        </Formik>
+        <ContactForm onSubmit={this.handleSubmit} />
 
-        {this.state.contacts.length > 0 && <h2>Contacts</h2>}
-        {this.state.contacts.length > 0 && (
-          <Filter
-            value={this.state.filter}
-            onFilterChange={this.onFilterChange}
-          />
+        {!!this.state.contacts.length && (
+          <>
+            <h2>Contacts</h2>
+            <Filter
+              value={this.state.filter}
+              onFilterChange={this.onFilterChange}
+            />
+          </>
         )}
-        <ContactList
-          // contacts={this.state.contacts}
-          neddedCards={neddedCards}
-          deleteCard={this.deleteCard}
-        />
-      </>
+
+        <ContactList neddedCards={neddedCards} deleteCard={this.deleteCard} />
+      </Container>
     );
   }
 }
